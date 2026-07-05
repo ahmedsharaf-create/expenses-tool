@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Expense Ledger Consolidator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1f2e34;
+    --ink-soft:#33454c;
+    --paper:#efe7d8;
+    --paper-line:#d8cdb3;
+    --brass:#a97f3f;
+    --brass-dark:#8a6a34;
+    --teal:#2f4c43;
+    --teal-soft:#e4ece6;
+    --danger:#a4453a;
+    --shadow: 0 10px 30px rgba(31,46,52,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--ink);
+    background-image: radial-gradient(circle at 20% 0%, #263a41 0%, #1f2e34 55%);
+    color: var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    padding: 40px 20px 60px;
+  }
+  .wrap{ max-width: 900px; margin: 0 auto; }
+
+  .masthead{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(239,231,216,0.18);
+  }
+  .masthead h1{
+    font-family:'Zilla Slab', serif;
+    color: var(--paper);
+    font-size: 2rem;
+    margin:0 0 6px;
+    letter-spacing: 0.2px;
+  }
+  .masthead p{
+    color: rgba(239,231,216,0.65);
+    margin:0;
+    font-size: 0.92rem;
+    max-width: 480px;
+  }
+  .stamp{
+    flex-shrink:0;
+    width:76px;height:76px;
+    border:2.5px solid var(--brass);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transform: rotate(-8deg);
+    color: var(--brass);
+    font-family:'Zilla Slab', serif;
+    font-weight:700;
+    font-size:0.62rem;
+    text-align:center;
+    line-height:1.15;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    opacity:0.9;
+  }
+
+  .page{
+    background: var(--paper);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 30px;
+    margin-bottom: 22px;
+    position:relative;
+  }
+  .page::before{
+    content:"";
+    position:absolute; left:0; top:22px; bottom:22px; width:3px;
+    background: repeating-linear-gradient(to bottom, var(--brass) 0 6px, transparent 6px 14px);
+    border-radius: 2px;
+    opacity:0.55;
+  }
+  .page-inner{ padding-left: 18px; }
+
+  h2.section-title{
+    font-family:'Zilla Slab', serif;
+    font-size:1.05rem;
+    margin: 0 0 14px;
+    color: var(--ink);
+    display:flex; align-items:center; gap:8px;
+  }
+  h2.section-title .n{
+    color: var(--brass-dark);
+  }
+
+  .dropzone{
+    border: 1.5px dashed var(--paper-line);
+    border-radius: 8px;
+    padding: 34px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition: border-color .15s ease, background .15s ease;
+    background: rgba(255,255,255,0.28);
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color: var(--brass);
+    background: rgba(255,255,255,0.5);
+  }
+  .dropzone .big{
+    font-family:'Zilla Slab', serif;
+    font-size:1.05rem;
+    color: var(--ink);
+    margin-bottom:4px;
+  }
+  .dropzone .small{
+    font-size:0.82rem;
+    color: var(--ink-soft);
+    opacity:0.75;
+  }
+  input[type=file]{ display:none; }
+
+  .tabs{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;
+  }
+  .tab{
+    background: #fff;
+    border: 1px solid var(--paper-line);
+    border-bottom: 3px solid var(--brass);
+    padding: 8px 12px 7px;
+    border-radius: 4px 4px 3px 3px;
+    font-size:0.82rem;
+    display:flex; align-items:center; gap:8px;
+    color: var(--ink);
+  }
+  .tab .meta{ opacity:0.6; font-size:0.74rem; }
+  .tab button{
+    border:none; background:none; cursor:pointer;
+    color: var(--danger); font-size:0.95rem; line-height:1; padding:0 2px;
+    font-weight:600;
+  }
+
+  .actions{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;}
+  button.primary, button.secondary{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.86rem;
+    padding: 11px 20px;
+    border-radius: 5px;
+    cursor:pointer;
+    border: 1px solid transparent;
+    transition: transform .1s ease, filter .15s ease;
+  }
+  button.primary{
+    background: var(--brass);
+    color: #fff8ec;
+  }
+  button.primary:hover{ filter:brightness(1.06); }
+  button.primary:disabled{ opacity:0.4; cursor:not-allowed; }
+  button.secondary{
+    background: transparent;
+    color: var(--teal);
+    border-color: var(--teal);
+  }
+  button.secondary:hover{ background: var(--teal-soft); }
+
+  .status{
+    margin-top:14px;
+    font-size:0.82rem;
+    color: var(--danger);
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .stat{
+    background: var(--paper);
+    border-radius:6px;
+    padding: 16px 14px;
+    box-shadow: var(--shadow);
+    text-align:center;
+  }
+  .stat .val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.35rem;
+    font-weight:600;
+    color: var(--teal);
+  }
+  .stat .lbl{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color: var(--ink-soft);
+    opacity:0.75;
+    margin-top:4px;
+  }
+
+  .toolbar{
+    display:flex; justify-content:space-between; align-items:center;
+    gap:12px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .toolbar input[type=text]{
+    flex:1; min-width:180px;
+    padding:9px 12px;
+    border-radius:5px;
+    border:1px solid var(--paper-line);
+    font-family:'Inter',sans-serif;
+    font-size:0.85rem;
+    background:#fff;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.82rem;
+  }
+  thead th{
+    text-align:left;
+    font-family:'Zilla Slab', serif;
+    font-weight:600;
+    font-size:0.76rem;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color: var(--ink-soft);
+    border-bottom: 2px solid var(--brass);
+    padding: 8px 8px;
+    position:sticky; top:0; background:var(--paper);
+  }
+  tbody td{
+    padding:7px 8px;
+    border-bottom: 1px solid var(--paper-line);
+    color: var(--ink);
+    vertical-align:top;
+  }
+  tbody tr:nth-child(even){ background: rgba(255,255,255,0.35); }
+  td.amount, th.amount{
+    font-family:'IBM Plex Mono', monospace;
+    text-align:right;
+    white-space:nowrap;
+  }
+  .table-scroll{
+    max-height: 460px;
+    overflow:auto;
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+  }
+  .empty-note{
+    text-align:center;
+    color: var(--ink-soft);
+    opacity:0.7;
+    font-size:0.85rem;
+    padding: 20px 0;
+  }
+  footer{
+    text-align:center;
+    color: rgba(239,231,216,0.4);
+    font-size:0.76rem;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>Expense Ledger Consolidator</h1>
+      <p>Drop in each branch's expense workbook and merge every sheet into one register — ready to review and download.</p>
+    </div>
+    <div class="stamp">Merged<br>&amp; Balanced</div>
+  </div>
+
+  <div class="page">
+    <div class="page-inner">
+      <h2 class="section-title"><span class="n">01</span> Add branch workbooks</h2>
+      <div class="dropzone" id="dropzone">
+        <div class="big">Drag .xlsx files here, or click to browse</div>
+        <div class="small">Each sheet in a workbook (Matar, Zahrya, Ras el Ten...) is read as one branch. Expected columns: Date · Shop Name · Category · Subcategory · Amount · Description</div>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple>
+      <div class="tabs" id="fileTabs"></div>
+      <div class="actions">
+        <button class="primary" id="combineBtn" disabled>Combine into one ledger</button>
+        <button class="secondary" id="clearBtn">Clear all</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <div id="results" style="display:none;">
+    <div class="stats">
+      <div class="stat"><div class="val" id="statEntries">0</div><div class="lbl">Entries</div></div>
+      <div class="stat"><div class="val" id="statBranches">0</div><div class="lbl">Branches</div></div>
+      <div class="stat"><div class="val" id="statFiles">0</div><div class="lbl">Workbooks</div></div>
+      <div class="stat"><div class="val" id="statTotal">0</div><div class="lbl">Total Amount</div></div>
+    </div>
+
+    <div class="page">
+      <div class="page-inner">
+        <h2 class="section-title"><span class="n">02</span> Combined register</h2>
+        <div class="toolbar">
+          <input type="text" id="searchBox" placeholder="Filter by branch, category, shop, or description...">
+          <button class="primary" id="downloadBtn">Download combined .xlsx</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Workbook</th>
+                <th>Branch</th>
+                <th>Date</th>
+                <th>Shop Name</th>
+                <th>Category</th>
+                <th>Subcategory</th>
+                <th class="amount">Amount</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-note" id="emptyNote" style="display:none;">No rows match that filter.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Runs entirely in your browser — files are never uploaded anywhere.</footer>
+</div>
+
+<script>
+const HEADER_ALIASES = {
+  'date':'date', 'shop name':'shopName', 'category':'category',
+  'subcategory':'subcategory', 'amount':'amount', 'description':'description'
+};
+const STANDARD_ORDER = ['date','shopName','category','subcategory','amount','description'];
+
+let loadedFiles = [];   // {name, workbook}
+let combinedRecords = [];
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const fileTabs = document.getElementById('fileTabs');
+const combineBtn = document.getElementById('combineBtn');
+const clearBtn = document.getElementById('clearBtn');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+const tableBody = document.getElementById('tableBody');
+const searchBox = document.getElementById('searchBox');
+const emptyNote = document.getElementById('emptyNote');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+clearBtn.addEventListener('click', () => {
+  loadedFiles = [];
+  combinedRecords = [];
+  fileInput.value = '';
+  renderTabs();
+  resultsEl.style.display = 'none';
+  statusEl.textContent = '';
+});
+
+function handleFiles(fileList){
+  statusEl.textContent = '';
+  [...fileList].forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type:'array', cellDates:true });
+        loadedFiles.push({ name: file.name, workbook });
+        renderTabs();
+      }catch(err){
+        statusEl.textContent = `Could not read "${file.name}" — is it a valid Excel file?`;
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function renderTabs(){
+  fileTabs.innerHTML = '';
+  loadedFiles.forEach((f, idx) => {
+    const tab = document.createElement('div');
+    tab.className = 'tab';
+    tab.innerHTML = `<span>${f.name}</span><span class="meta">${f.workbook.SheetNames.length} sheet${f.workbook.SheetNames.length===1?'':'s'}</span>`;
+    const btn = document.createElement('button');
+    btn.textContent = '×';
+    btn.onclick = () => { loadedFiles.splice(idx,1); renderTabs(); };
+    tab.appendChild(btn);
+    fileTabs.appendChild(tab);
+  });
+  combineBtn.disabled = loadedFiles.length === 0;
+}
+
+function normHeader(v){
+  return String(v ?? '').trim().toLowerCase();
+}
+
+function formatDate(v){
+  if(v instanceof Date && !isNaN(v)){
+    const y = v.getFullYear(), m = String(v.getMonth()+1).padStart(2,'0'), d = String(v.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  if(typeof v === 'number'){
+    const parsed = XLSX.SSF.parse_date_code(v);
+    if(parsed) return `${parsed.y}-${String(parsed.m).padStart(2,'0')}-${String(parsed.d).padStart(2,'0')}`;
+  }
+  return v ?? '';
+}
+
+function extractSheetRecords(sheet, fileName, sheetName){
+  const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:null, raw:true });
+  if(rows.length === 0) return [];
+
+  let colMap = null;
+  let startRow = 0;
+  const firstRow = rows[0].map(normHeader);
+  const matches = firstRow.filter(h => HEADER_ALIASES[h]).length;
+  if(matches >= 3){
+    colMap = {};
+    firstRow.forEach((h, i) => { if(HEADER_ALIASES[h]) colMap[HEADER_ALIASES[h]] = i; });
+    startRow = 1;
+  } else {
+    colMap = {};
+    STANDARD_ORDER.forEach((key, i) => colMap[key] = i);
+    startRow = 0;
+  }
+
+  const records = [];
+  for(let r = startRow; r < rows.length; r++){
+    const row = rows[r];
+    if(!row) continue;
+    const shopName = colMap.shopName != null ? row[colMap.shopName] : null;
+    const amount = colMap.amount != null ? row[colMap.amount] : null;
+    const description = colMap.description != null ? row[colMap.description] : null;
+    const hasContent = (shopName != null && String(shopName).trim() !== '') ||
+                        (amount != null && String(amount).trim?.() !== '') ||
+                        (typeof amount === 'number');
+    if(!hasContent) continue;
+
+    records.push({
+      file: fileName,
+      branch: sheetName,
+      date: formatDate(colMap.date != null ? row[colMap.date] : null),
+      shopName: shopName ?? '',
+      category: colMap.category != null ? (row[colMap.category] ?? '') : '',
+      subcategory: colMap.subcategory != null ? (row[colMap.subcategory] ?? '') : '',
+      amount: typeof amount === 'number' ? amount : (parseFloat(amount) || (amount ? amount : '')),
+      description: description ?? ''
+    });
+  }
+  return records;
+}
+
+combineBtn.addEventListener('click', () => {
+  combinedRecords = [];
+  loadedFiles.forEach(f => {
+    f.workbook.SheetNames.forEach(sheetName => {
+      const sheet = f.workbook.Sheets[sheetName];
+      combinedRecords.push(...extractSheetRecords(sheet, f.name, sheetName));
+    });
+  });
+  renderResults();
+});
+
+function renderResults(){
+  resultsEl.style.display = combinedRecords.length ? 'block' : 'none';
+  if(!combinedRecords.length){
+    statusEl.textContent = 'No rows were found in the uploaded files. Check the column layout matches the expected template.';
+    return;
+  }
+  statusEl.textContent = '';
+
+  const branches = new Set(combinedRecords.map(r => r.branch));
+  const files = new Set(combinedRecords.map(r => r.file));
+  const total = combinedRecords.reduce((sum, r) => sum + (typeof r.amount === 'number' ? r.amount : 0), 0);
+
+  document.getElementById('statEntries').textContent = combinedRecords.length.toLocaleString();
+  document.getElementById('statBranches').textContent = branches.size;
+  document.getElementById('statFiles').textContent = files.size;
+  document.getElementById('statTotal').textContent = total.toLocaleString(undefined, {maximumFractionDigits:2});
+
+  renderTable(combinedRecords);
+  searchBox.value = '';
+}
+
+function renderTable(records){
+  tableBody.innerHTML = '';
+  emptyNote.style.display = records.length ? 'none' : 'block';
+  const frag = document.createDocumentFragment();
+  records.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(r.file)}</td>
+      <td>${escapeHtml(r.branch)}</td>
+      <td>${escapeHtml(r.date)}</td>
+      <td>${escapeHtml(r.shopName)}</td>
+      <td>${escapeHtml(r.category)}</td>
+      <td>${escapeHtml(r.subcategory)}</td>
+      <td class="amount">${typeof r.amount === 'number' ? r.amount.toLocaleString(undefined,{maximumFractionDigits:2}) : escapeHtml(r.amount)}</td>
+      <td>${escapeHtml(r.description)}</td>
+    `;
+    frag.appendChild(tr);
+  });
+  tableBody.appendChild(frag);
+}
+
+function escapeHtml(v){
+  const s = String(v ?? '');
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+searchBox.addEventListener('input', () => {
+  const q = searchBox.value.trim().toLowerCase();
+  if(!q){ renderTable(combinedRecords); return; }
+  const filtered = combinedRecords.filter(r =>
+    [r.file, r.branch, r.shopName, r.category, r.subcategory, r.description]
+      .some(v => String(v).toLowerCase().includes(q))
+  );
+  renderTable(filtered);
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if(!combinedRecords.length) return;
+
+  const dataSheet = XLSX.utils.json_to_sheet(combinedRecords.map(r => ({
+    'Workbook': r.file, 'Branch': r.branch, 'Date': r.date, 'Shop Name': r.shopName,
+    'Category': r.category, 'Subcategory': r.subcategory, 'Amount': typeof r.amount === 'number' ? r.amount : r.amount,
+    'Description': r.description
+  })));
+  dataSheet['!cols'] = [{wch:22},{wch:16},{wch:12},{wch:18},{wch:18},{wch:16},{wch:12},{wch:36}];
+
+  const byBranch = {};
+  combinedRecords.forEach(r => {
+    if(typeof r.amount !== 'number') return;
+    byBranch[r.branch] = (byBranch[r.branch] || 0) + r.amount;
+  });
+  const summaryRows = [['Branch','Total Amount']];
+  Object.entries(byBranch).sort((a,b)=>b[1]-a[1]).forEach(([branch, total]) => summaryRows.push([branch, total]));
+  summaryRows.push(['Grand Total', Object.values(byBranch).reduce((a,b)=>a+b,0)]);
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+  summarySheet['!cols'] = [{wch:24},{wch:16}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, dataSheet, 'Combined');
+  XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary by Branch');
+  XLSX.writeFile(wb, 'Combined_Expenses.xlsx');
+});
+</script>
+</body>
+</html>
