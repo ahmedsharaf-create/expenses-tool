@@ -2,22 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Pyramids Expenses compiler</title>
+<title>Pyramids Expenses Compiler</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink: #1f2e34;
-    --ink-soft: #33454c;
-    --paper: #ffffff;
-    --paper-line: #d8cdb3;
-    --brass: #e20000;
-    --brass-dark: #8a6a34;
-    --teal: #2f4c43;
-    --teal-soft: #e4ece6;
-    --danger: #840e00;
-    --shadow: 0 10px 30px rgba(31, 46, 52, 0.18);
+    --ink:#1f2e34;
+    --ink-soft:#33454c;
+    --paper:#efe7d8;
+    --paper-line:#d8cdb3;
+    --brass:#a97f3f;
+    --brass-dark:#8a6a34;
+    --teal:#2f4c43;
+    --teal-soft:#e4ece6;
+    --danger:#a4453a;
+    --danger-soft:#f5e2df;
+    --warn:#b8862f;
+    --warn-soft:#f6ecd8;
+    --ok:#3f6b4f;
+    --shadow: 0 10px 30px rgba(31,46,52,0.18);
+  }
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -28,7 +33,7 @@
     min-height:100vh;
     padding: 40px 20px 60px;
   }
-  .wrap{ max-width: 900px; margin: 0 auto; }
+  .wrap{ max-width: 960px; margin: 0 auto; }
 
   .masthead{
     display:flex;
@@ -50,7 +55,7 @@
     color: rgba(239,231,216,0.65);
     margin:0;
     font-size: 0.92rem;
-    max-width: 480px;
+    max-width: 500px;
   }
   .stamp{
     flex-shrink:0;
@@ -94,8 +99,14 @@
     color: var(--ink);
     display:flex; align-items:center; gap:8px;
   }
-  h2.section-title .n{
-    color: var(--brass-dark);
+  h2.section-title .n{ color: var(--brass-dark); }
+  h2.section-title .sub{
+    font-family:'Inter',sans-serif;
+    font-weight:400;
+    font-size:0.78rem;
+    color: var(--ink-soft);
+    opacity:0.75;
+    margin-left:4px;
   }
 
   .dropzone{
@@ -124,9 +135,7 @@
   }
   input[type=file]{ display:none; }
 
-  .tabs{
-    display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;
-  }
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
   .tab{
     background: #fff;
     border: 1px solid var(--paper-line);
@@ -145,125 +154,109 @@
   }
 
   .actions{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;}
-  button.primary, button.secondary{
+  button.primary, button.secondary, button.mini{
     font-family:'Inter',sans-serif;
     font-weight:600;
-    font-size:0.86rem;
-    padding: 11px 20px;
-    border-radius: 5px;
     cursor:pointer;
     border: 1px solid transparent;
     transition: transform .1s ease, filter .15s ease;
   }
-  button.primary{
-    background: var(--brass);
-    color: #fff8ec;
+  button.primary, button.secondary{
+    font-size:0.86rem;
+    padding: 11px 20px;
+    border-radius: 5px;
   }
+  button.primary{ background: var(--brass); color: #fff8ec; }
   button.primary:hover{ filter:brightness(1.06); }
   button.primary:disabled{ opacity:0.4; cursor:not-allowed; }
-  button.secondary{
-    background: transparent;
-    color: var(--teal);
-    border-color: var(--teal);
-  }
+  button.secondary{ background: transparent; color: var(--teal); border-color: var(--teal); }
   button.secondary:hover{ background: var(--teal-soft); }
-
-  .status{
-    margin-top:14px;
-    font-size:0.82rem;
-    color: var(--danger);
-  }
-
-  .stats{
-    display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 22px;
-  }
-  .stat{
-    background: var(--paper);
-    border-radius:6px;
-    padding: 16px 14px;
-    box-shadow: var(--shadow);
-    text-align:center;
-  }
-  .stat .val{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:1.35rem;
-    font-weight:600;
-    color: var(--teal);
-  }
-  .stat .lbl{
-    font-size:0.72rem;
-    text-transform:uppercase;
-    letter-spacing:0.6px;
-    color: var(--ink-soft);
-    opacity:0.75;
-    margin-top:4px;
-  }
-
-  .toolbar{
-    display:flex; justify-content:space-between; align-items:center;
-    gap:12px; margin-bottom:14px; flex-wrap:wrap;
-  }
-  .toolbar input[type=text]{
-    flex:1; min-width:180px;
-    padding:9px 12px;
-    border-radius:5px;
-    border:1px solid var(--paper-line);
-    font-family:'Inter',sans-serif;
-    font-size:0.85rem;
+  button.mini{
+    font-size:0.74rem;
+    padding: 5px 10px;
+    border-radius: 4px;
     background:#fff;
+    border-color: var(--paper-line);
+    color: var(--ink);
+  }
+  button.mini:hover{ border-color: var(--brass); }
+  button.mini.active{ background: var(--teal); border-color: var(--teal); color:#fff; }
+
+  .status{ margin-top:14px; font-size:0.82rem; color: var(--danger); }
+
+  .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat{ background: var(--paper); border-radius:6px; padding: 16px 14px; box-shadow: var(--shadow); text-align:center; }
+  .stat.warn .val{ color: var(--warn); }
+  .stat.err .val{ color: var(--danger); }
+  .stat .val{ font-family:'IBM Plex Mono', monospace; font-size:1.35rem; font-weight:600; color: var(--teal); }
+  .stat .lbl{ font-size:0.72rem; text-transform:uppercase; letter-spacing:0.6px; color: var(--ink-soft); opacity:0.75; margin-top:4px; }
+
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .toolbar-left{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .toolbar input[type=text]{
+    flex:1; min-width:180px; padding:9px 12px; border-radius:5px;
+    border:1px solid var(--paper-line); font-family:'Inter',sans-serif; font-size:0.85rem; background:#fff;
   }
 
-  table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:0.82rem;
-  }
+  table{ width:100%; border-collapse:collapse; font-size:0.82rem; }
   thead th{
-    text-align:left;
-    font-family:'Zilla Slab', serif;
-    font-weight:600;
-    font-size:0.76rem;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-    color: var(--ink-soft);
-    border-bottom: 2px solid var(--brass);
-    padding: 8px 8px;
-    position:sticky; top:0; background:var(--paper);
+    text-align:left; font-family:'Zilla Slab', serif; font-weight:600; font-size:0.76rem;
+    text-transform:uppercase; letter-spacing:0.5px; color: var(--ink-soft);
+    border-bottom: 2px solid var(--brass); padding: 8px 8px; position:sticky; top:0; background:var(--paper);
   }
-  tbody td{
-    padding:7px 8px;
-    border-bottom: 1px solid var(--paper-line);
-    color: var(--ink);
-    vertical-align:top;
-  }
+  tbody td{ padding:7px 8px; border-bottom: 1px solid var(--paper-line); color: var(--ink); vertical-align:top; }
   tbody tr:nth-child(even){ background: rgba(255,255,255,0.35); }
-  td.amount, th.amount{
-    font-family:'IBM Plex Mono', monospace;
-    text-align:right;
-    white-space:nowrap;
+  tbody tr.row-error{ box-shadow: inset 3px 0 0 var(--danger); }
+  tbody tr.row-warn{ box-shadow: inset 3px 0 0 var(--warn); }
+  td.amount, th.amount{ font-family:'IBM Plex Mono', monospace; text-align:right; white-space:nowrap; }
+  .table-scroll{ max-height: 460px; overflow:auto; border: 1px solid var(--paper-line); border-radius: 6px; }
+  .empty-note{ text-align:center; color: var(--ink-soft); opacity:0.7; font-size:0.85rem; padding: 20px 0; }
+
+  .status-badge{
+    display:inline-block; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px;
+    padding:2px 7px; border-radius:20px; white-space:nowrap;
   }
-  .table-scroll{
-    max-height: 460px;
-    overflow:auto;
+  .status-badge.ok{ background: rgba(63,107,79,0.12); color: var(--ok); }
+  .status-badge.warn{ background: var(--warn-soft); color: var(--warn); }
+  .status-badge.err{ background: var(--danger-soft); color: var(--danger); }
+
+  .map-card{
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border-radius:6px;
+    background:#fff;
+    padding:14px 16px;
+    margin-bottom:12px;
   }
-  .empty-note{
-    text-align:center;
-    color: var(--ink-soft);
-    opacity:0.7;
-    font-size:0.85rem;
-    padding: 20px 0;
+  .map-card-head{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:10px;
   }
-  footer{
-    text-align:center;
-    color: rgba(239,231,216,0.4);
-    font-size:0.76rem;
-    margin-top: 10px;
+  .map-card-head .title{ font-weight:600; font-size:0.86rem; color: var(--ink); }
+  .map-card-head .title .file-tag{ color: var(--ink-soft); font-weight:400; font-size:0.76rem; }
+  .map-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
   }
+  .map-field label{
+    display:block; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.4px;
+    color: var(--ink-soft); opacity:0.75; margin-bottom:4px;
+  }
+  .map-field select{
+    width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--paper-line);
+    font-family:'Inter',sans-serif; font-size:0.78rem; background:#fdfcf9; color: var(--ink);
+  }
+  .auto-badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:0.7rem; padding:2px 8px; border-radius:20px;
+  }
+  .auto-badge.detected{ background: rgba(63,107,79,0.12); color: var(--ok); }
+  .auto-badge.fallback{ background: var(--warn-soft); color: var(--warn); }
+
+  .issues-scroll{ max-height:280px; overflow:auto; border:1px solid var(--paper-line); border-radius:6px; }
+  .issue-row td{ font-size:0.79rem; }
+  .issue-tag{ font-family:'IBM Plex Mono', monospace; font-size:0.72rem; }
+
+  footer{ text-align:center; color: rgba(239,231,216,0.4); font-size:0.76rem; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -271,8 +264,8 @@
 
   <div class="masthead">
     <div>
-      <h1>Pyramids Expenses compiler</h1>
-      <p>Drop each branch's expense Sheet to merge them into one Sheet — ready to review and download.</p>
+      <h1>Expense Ledger Consolidator</h1>
+      <p>Drop in each branch's expense workbook, fix any column mismatches, and merge every sheet into one checked, ready-to-download register.</p>
     </div>
     <div class="stamp">Merged<br>&amp; Balanced</div>
   </div>
@@ -287,10 +280,17 @@
       <input type="file" id="fileInput" accept=".xlsx,.xls" multiple>
       <div class="tabs" id="fileTabs"></div>
       <div class="actions">
-        <button class="primary" id="combineBtn" disabled>Combine into one Sheet</button>
+        <button class="primary" id="combineBtn" disabled>Combine into one ledger</button>
         <button class="secondary" id="clearBtn">Clear all</button>
       </div>
       <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <div class="page" id="mappingPage" style="display:none;">
+    <div class="page-inner">
+      <h2 class="section-title"><span class="n">02</span> Review sheet columns <span class="sub">— fix any sheet where a column was misread before combining</span></h2>
+      <div id="mappingCards"></div>
     </div>
   </div>
 
@@ -298,21 +298,38 @@
     <div class="stats">
       <div class="stat"><div class="val" id="statEntries">0</div><div class="lbl">Entries</div></div>
       <div class="stat"><div class="val" id="statBranches">0</div><div class="lbl">Branches</div></div>
-      <div class="stat"><div class="val" id="statFiles">0</div><div class="lbl">Workbooks</div></div>
-      <div class="stat"><div class="val" id="statTotal">0</div><div class="lbl">Total Amount</div></div>
+      <div class="stat warn"><div class="val" id="statWarn">0</div><div class="lbl">Warnings</div></div>
+      <div class="stat err"><div class="val" id="statErr">0</div><div class="lbl">Errors</div></div>
+    </div>
+
+    <div class="page" id="issuesPage" style="display:none;">
+      <div class="page-inner">
+        <h2 class="section-title"><span class="n">03</span> Data quality issues <span class="sub">— review before you download</span></h2>
+        <div class="issues-scroll">
+          <table>
+            <thead><tr><th>Severity</th><th>Workbook</th><th>Branch</th><th>Row</th><th>Issue</th></tr></thead>
+            <tbody id="issuesBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div class="page">
       <div class="page-inner">
-        <h2 class="section-title"><span class="n">02</span> Combined register</h2>
+        <h2 class="section-title"><span class="n">04</span> Combined register</h2>
         <div class="toolbar">
-          <input type="text" id="searchBox" placeholder="Filter by branch, category, shop, or description...">
+          <div class="toolbar-left">
+            <input type="text" id="searchBox" placeholder="Filter by branch, category, shop, or description...">
+            <button class="mini" id="filterAll">All</button>
+            <button class="mini" id="filterFlagged">Flagged only</button>
+          </div>
           <button class="primary" id="downloadBtn">Download combined .xlsx</button>
         </div>
         <div class="table-scroll">
           <table>
             <thead>
               <tr>
+                <th>Status</th>
                 <th>Workbook</th>
                 <th>Branch</th>
                 <th>Date</th>
@@ -335,14 +352,18 @@
 </div>
 
 <script>
+const FIELD_KEYS = ['date','shopName','category','subcategory','amount','description'];
+const FIELD_LABELS = { date:'Date', shopName:'Shop Name', category:'Category', subcategory:'Subcategory', amount:'Amount', description:'Description' };
 const HEADER_ALIASES = {
   'date':'date', 'shop name':'shopName', 'category':'category',
   'subcategory':'subcategory', 'amount':'amount', 'description':'description'
 };
 const STANDARD_ORDER = ['date','shopName','category','subcategory','amount','description'];
 
-let loadedFiles = [];   // {name, workbook}
+let loadedFiles = [];    // {name, workbook}
+let sheetMeta = [];      // {id, fileName, sheetName, rows, headerDetected, colMap, colCount}
 let combinedRecords = [];
+let tableFilterMode = 'all';
 
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
@@ -350,7 +371,11 @@ const fileTabs = document.getElementById('fileTabs');
 const combineBtn = document.getElementById('combineBtn');
 const clearBtn = document.getElementById('clearBtn');
 const statusEl = document.getElementById('status');
+const mappingPage = document.getElementById('mappingPage');
+const mappingCards = document.getElementById('mappingCards');
 const resultsEl = document.getElementById('results');
+const issuesPage = document.getElementById('issuesPage');
+const issuesBody = document.getElementById('issuesBody');
 const tableBody = document.getElementById('tableBody');
 const searchBox = document.getElementById('searchBox');
 const emptyNote = document.getElementById('emptyNote');
@@ -358,17 +383,14 @@ const emptyNote = document.getElementById('emptyNote');
 dropzone.addEventListener('click', () => fileInput.click());
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.classList.remove('drag');
-  handleFiles(e.dataTransfer.files);
-});
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
 fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
 clearBtn.addEventListener('click', () => {
-  loadedFiles = [];
-  combinedRecords = [];
+  loadedFiles = []; sheetMeta = []; combinedRecords = [];
   fileInput.value = '';
   renderTabs();
+  mappingPage.style.display = 'none';
   resultsEl.style.display = 'none';
   statusEl.textContent = '';
 });
@@ -383,6 +405,7 @@ function handleFiles(fileList){
         const workbook = XLSX.read(data, { type:'array', cellDates:true });
         loadedFiles.push({ name: file.name, workbook });
         renderTabs();
+        buildSheetMeta();
       }catch(err){
         statusEl.textContent = `Could not read "${file.name}" — is it a valid Excel file?`;
       }
@@ -399,16 +422,122 @@ function renderTabs(){
     tab.innerHTML = `<span>${f.name}</span><span class="meta">${f.workbook.SheetNames.length} sheet${f.workbook.SheetNames.length===1?'':'s'}</span>`;
     const btn = document.createElement('button');
     btn.textContent = '×';
-    btn.onclick = () => { loadedFiles.splice(idx,1); renderTabs(); };
+    btn.onclick = () => { loadedFiles.splice(idx,1); renderTabs(); buildSheetMeta(); };
     tab.appendChild(btn);
     fileTabs.appendChild(tab);
   });
   combineBtn.disabled = loadedFiles.length === 0;
+  if(loadedFiles.length === 0){ mappingPage.style.display = 'none'; }
 }
 
-function normHeader(v){
-  return String(v ?? '').trim().toLowerCase();
+function normHeader(v){ return String(v ?? '').trim().toLowerCase(); }
+
+// ---------- Column mapping detection ----------
+
+function detectColMap(rows){
+  if(rows.length === 0) return { colMap:{}, headerDetected:false, startRow:0 };
+  const firstRow = rows[0].map(normHeader);
+  const matches = firstRow.filter(h => HEADER_ALIASES[h]).length;
+  if(matches >= 3){
+    const colMap = {};
+    firstRow.forEach((h, i) => { if(HEADER_ALIASES[h]) colMap[HEADER_ALIASES[h]] = i; });
+    return { colMap, headerDetected:true, startRow:1 };
+  }
+  const colMap = {};
+  STANDARD_ORDER.forEach((key, i) => { if(i < (rows[0] ? rows[0].length : 6)) colMap[key] = i; });
+  return { colMap, headerDetected:false, startRow:0 };
 }
+
+function buildSheetMeta(){
+  sheetMeta = [];
+  loadedFiles.forEach(f => {
+    f.workbook.SheetNames.forEach(sheetName => {
+      const sheet = f.workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:null, raw:true });
+      const { colMap, headerDetected, startRow } = detectColMap(rows);
+      const colCount = rows.reduce((max, r) => Math.max(max, r ? r.length : 0), 0);
+      sheetMeta.push({
+        id: `${f.name}__${sheetName}`,
+        fileName: f.name,
+        sheetName,
+        rows, colMap, headerDetected, startRow, colCount
+      });
+    });
+  });
+  renderMappingCards();
+}
+
+function colLetter(i){
+  let s = '';
+  i = i + 1;
+  while(i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65+m) + s; i = Math.floor((i-1)/26); }
+  return s;
+}
+
+function sampleForColumn(meta, colIdx){
+  if(colIdx == null) return '';
+  for(let r = meta.startRow; r < Math.min(meta.rows.length, meta.startRow + 6); r++){
+    const row = meta.rows[r];
+    if(!row) continue;
+    const v = row[colIdx];
+    if(v != null && String(v).trim() !== ''){
+      let s = v instanceof Date ? formatDate(v) : String(v);
+      return s.length > 22 ? s.slice(0,22) + '…' : s;
+    }
+  }
+  return '(empty)';
+}
+
+function renderMappingCards(){
+  mappingCards.innerHTML = '';
+  if(sheetMeta.length === 0){ mappingPage.style.display = 'none'; return; }
+  mappingPage.style.display = 'block';
+
+  sheetMeta.forEach(meta => {
+    const card = document.createElement('div');
+    card.className = 'map-card';
+
+    const head = document.createElement('div');
+    head.className = 'map-card-head';
+    head.innerHTML = `
+      <div class="title">${escapeHtml(meta.sheetName)} <span class="file-tag">— ${escapeHtml(meta.fileName)}</span></div>
+      <span class="auto-badge ${meta.headerDetected ? 'detected' : 'fallback'}">
+        ${meta.headerDetected ? '✓ Header row detected' : '⚠ No header row found — using default column order, please verify'}
+      </span>
+    `;
+    card.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'map-grid';
+    FIELD_KEYS.forEach(key => {
+      const field = document.createElement('div');
+      field.className = 'map-field';
+      const options = [];
+      options.push(`<option value="">(none)</option>`);
+      for(let c = 0; c < Math.max(meta.colCount, 6); c++){
+        const sample = sampleForColumn(meta, c);
+        const selected = meta.colMap[key] === c ? 'selected' : '';
+        options.push(`<option value="${c}" ${selected}>${colLetter(c)} — ${escapeHtml(sample)}</option>`);
+      }
+      field.innerHTML = `<label>${FIELD_LABELS[key]}</label>
+        <select data-sheet="${meta.id}" data-field="${key}">${options.join('')}</select>`;
+      grid.appendChild(field);
+    });
+    card.appendChild(grid);
+    mappingCards.appendChild(card);
+  });
+
+  mappingCards.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const meta = sheetMeta.find(m => m.id === e.target.dataset.sheet);
+      const field = e.target.dataset.field;
+      const val = e.target.value;
+      meta.colMap[field] = val === '' ? null : parseInt(val, 10);
+    });
+  });
+}
+
+// ---------- Extraction & validation ----------
 
 function formatDate(v){
   if(v instanceof Date && !isNaN(v)){
@@ -422,89 +551,181 @@ function formatDate(v){
   return v ?? '';
 }
 
-function extractSheetRecords(sheet, fileName, sheetName){
-  const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:null, raw:true });
-  if(rows.length === 0) return [];
-
-  let colMap = null;
-  let startRow = 0;
-  const firstRow = rows[0].map(normHeader);
-  const matches = firstRow.filter(h => HEADER_ALIASES[h]).length;
-  if(matches >= 3){
-    colMap = {};
-    firstRow.forEach((h, i) => { if(HEADER_ALIASES[h]) colMap[HEADER_ALIASES[h]] = i; });
-    startRow = 1;
-  } else {
-    colMap = {};
-    STANDARD_ORDER.forEach((key, i) => colMap[key] = i);
-    startRow = 0;
-  }
-
+function extractSheetRecords(meta){
+  const { rows, colMap, startRow, fileName, sheetName } = meta;
   const records = [];
   for(let r = startRow; r < rows.length; r++){
     const row = rows[r];
     if(!row) continue;
     const shopName = colMap.shopName != null ? row[colMap.shopName] : null;
-    const amount = colMap.amount != null ? row[colMap.amount] : null;
+    const rawAmount = colMap.amount != null ? row[colMap.amount] : null;
     const description = colMap.description != null ? row[colMap.description] : null;
+    const rawDate = colMap.date != null ? row[colMap.date] : null;
+    const category = colMap.category != null ? row[colMap.category] : null;
+
     const hasContent = (shopName != null && String(shopName).trim() !== '') ||
-                        (amount != null && String(amount).trim?.() !== '') ||
-                        (typeof amount === 'number');
+                        (rawAmount != null && String(rawAmount).trim?.() !== '') ||
+                        (typeof rawAmount === 'number') ||
+                        (rawDate != null && String(rawDate).trim?.() !== '');
     if(!hasContent) continue;
 
-    records.push({
+    const numericAmount = typeof rawAmount === 'number' ? rawAmount : parseFloat(rawAmount);
+    const amountValid = rawAmount != null && !isNaN(numericAmount);
+
+    const rec = {
       file: fileName,
       branch: sheetName,
-      date: formatDate(colMap.date != null ? row[colMap.date] : null),
+      sourceRow: r + 1,
+      date: formatDate(rawDate),
+      dateRaw: rawDate,
       shopName: shopName ?? '',
-      category: colMap.category != null ? (row[colMap.category] ?? '') : '',
+      category: category ?? '',
       subcategory: colMap.subcategory != null ? (row[colMap.subcategory] ?? '') : '',
-      amount: typeof amount === 'number' ? amount : (parseFloat(amount) || (amount ? amount : '')),
-      description: description ?? ''
-    });
+      amount: amountValid ? numericAmount : (rawAmount ?? ''),
+      amountValid,
+      description: description ?? '',
+      issues: []
+    };
+    records.push(rec);
   }
   return records;
 }
 
+function validateRecord(rec){
+  const issues = [];
+  if(!rec.date || rec.date === '' ){
+    issues.push({ severity:'error', msg:'Missing or unreadable date' });
+  }
+  if(!rec.shopName || String(rec.shopName).trim() === ''){
+    issues.push({ severity:'warn', msg:'Missing shop name' });
+  }
+  if(!rec.category || String(rec.category).trim() === ''){
+    issues.push({ severity:'warn', msg:'Missing category' });
+  }
+  if(!rec.amountValid){
+    issues.push({ severity:'error', msg:'Amount is missing or not a number' });
+  } else if(rec.amount <= 0){
+    issues.push({ severity:'warn', msg:'Amount is zero or negative' });
+  }
+  if(!rec.description || String(rec.description).trim() === ''){
+    issues.push({ severity:'warn', msg:'Missing description' });
+  }
+  return issues;
+}
+
+function detectDuplicates(records){
+  const seen = new Map();
+  records.forEach(rec => {
+    const key = [rec.file, rec.branch, rec.date, rec.shopName, rec.amount, rec.description].join('|').toLowerCase();
+    if(!seen.has(key)) seen.set(key, []);
+    seen.get(key).push(rec);
+  });
+  seen.forEach(group => {
+    if(group.length > 1){
+      group.forEach(rec => rec.issues.push({ severity:'warn', msg:`Possible duplicate (${group.length} identical rows)` }));
+    }
+  });
+}
+
+function severityOf(rec){
+  if(rec.issues.some(i => i.severity === 'error')) return 'error';
+  if(rec.issues.some(i => i.severity === 'warn')) return 'warn';
+  return 'ok';
+}
+
 combineBtn.addEventListener('click', () => {
   combinedRecords = [];
-  loadedFiles.forEach(f => {
-    f.workbook.SheetNames.forEach(sheetName => {
-      const sheet = f.workbook.Sheets[sheetName];
-      combinedRecords.push(...extractSheetRecords(sheet, f.name, sheetName));
-    });
+  sheetMeta.forEach(meta => {
+    combinedRecords.push(...extractSheetRecords(meta));
   });
+  combinedRecords.forEach(rec => { rec.issues = validateRecord(rec); });
+  detectDuplicates(combinedRecords);
+  tableFilterMode = 'all';
   renderResults();
+  resultsEl.scrollIntoView({ behavior:'smooth', block:'start' });
 });
 
 function renderResults(){
   resultsEl.style.display = combinedRecords.length ? 'block' : 'none';
   if(!combinedRecords.length){
-    statusEl.textContent = 'No rows were found in the uploaded files. Check the column layout matches the expected template.';
+    statusEl.textContent = 'No rows were found in the uploaded files. Check the column mapping above.';
     return;
   }
   statusEl.textContent = '';
 
   const branches = new Set(combinedRecords.map(r => r.branch));
-  const files = new Set(combinedRecords.map(r => r.file));
-  const total = combinedRecords.reduce((sum, r) => sum + (typeof r.amount === 'number' ? r.amount : 0), 0);
+  const warnCount = combinedRecords.filter(r => severityOf(r) === 'warn').length;
+  const errCount = combinedRecords.filter(r => severityOf(r) === 'error').length;
 
   document.getElementById('statEntries').textContent = combinedRecords.length.toLocaleString();
   document.getElementById('statBranches').textContent = branches.size;
-  document.getElementById('statFiles').textContent = files.size;
-  document.getElementById('statTotal').textContent = total.toLocaleString(undefined, {maximumFractionDigits:2});
+  document.getElementById('statWarn').textContent = warnCount;
+  document.getElementById('statErr').textContent = errCount;
 
-  renderTable(combinedRecords);
+  renderIssuesPanel();
+  setFilterMode('all');
   searchBox.value = '';
 }
+
+function renderIssuesPanel(){
+  issuesBody.innerHTML = '';
+  const flagged = combinedRecords.filter(r => r.issues.length > 0);
+  issuesPage.style.display = flagged.length ? 'block' : 'none';
+  const frag = document.createDocumentFragment();
+  flagged.forEach(rec => {
+    rec.issues.forEach(issue => {
+      const tr = document.createElement('tr');
+      tr.className = 'issue-row';
+      tr.innerHTML = `
+        <td><span class="status-badge ${issue.severity === 'error' ? 'err' : 'warn'}">${issue.severity === 'error' ? 'Error' : 'Warning'}</span></td>
+        <td>${escapeHtml(rec.file)}</td>
+        <td>${escapeHtml(rec.branch)}</td>
+        <td class="issue-tag">row ${rec.sourceRow}</td>
+        <td>${escapeHtml(issue.msg)}</td>
+      `;
+      frag.appendChild(tr);
+    });
+  });
+  issuesBody.appendChild(frag);
+}
+
+function setFilterMode(mode){
+  tableFilterMode = mode;
+  document.getElementById('filterAll').classList.toggle('active', mode === 'all');
+  document.getElementById('filterFlagged').classList.toggle('active', mode === 'flagged');
+  applyTableFilters();
+}
+document.getElementById('filterAll').addEventListener('click', () => setFilterMode('all'));
+document.getElementById('filterFlagged').addEventListener('click', () => setFilterMode('flagged'));
+
+function applyTableFilters(){
+  const q = searchBox.value.trim().toLowerCase();
+  let list = combinedRecords;
+  if(tableFilterMode === 'flagged') list = list.filter(r => r.issues.length > 0);
+  if(q){
+    list = list.filter(r =>
+      [r.file, r.branch, r.shopName, r.category, r.subcategory, r.description]
+        .some(v => String(v).toLowerCase().includes(q))
+    );
+  }
+  renderTable(list);
+}
+searchBox.addEventListener('input', applyTableFilters);
 
 function renderTable(records){
   tableBody.innerHTML = '';
   emptyNote.style.display = records.length ? 'none' : 'block';
   const frag = document.createDocumentFragment();
   records.forEach(r => {
+    const sev = severityOf(r);
     const tr = document.createElement('tr');
+    if(sev === 'error') tr.className = 'row-error';
+    else if(sev === 'warn') tr.className = 'row-warn';
+    const badge = sev === 'ok'
+      ? `<span class="status-badge ok">OK</span>`
+      : `<span class="status-badge ${sev === 'error' ? 'err' : 'warn'}" title="${escapeHtml(r.issues.map(i=>i.msg).join('; '))}">${r.issues.length} ${sev === 'error' ? 'error' : 'warning'}${r.issues.length>1?'s':''}</span>`;
     tr.innerHTML = `
+      <td>${badge}</td>
       <td>${escapeHtml(r.file)}</td>
       <td>${escapeHtml(r.branch)}</td>
       <td>${escapeHtml(r.date)}</td>
@@ -524,25 +745,17 @@ function escapeHtml(v){
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-searchBox.addEventListener('input', () => {
-  const q = searchBox.value.trim().toLowerCase();
-  if(!q){ renderTable(combinedRecords); return; }
-  const filtered = combinedRecords.filter(r =>
-    [r.file, r.branch, r.shopName, r.category, r.subcategory, r.description]
-      .some(v => String(v).toLowerCase().includes(q))
-  );
-  renderTable(filtered);
-});
-
 document.getElementById('downloadBtn').addEventListener('click', () => {
   if(!combinedRecords.length) return;
 
   const dataSheet = XLSX.utils.json_to_sheet(combinedRecords.map(r => ({
+    'Status': severityOf(r) === 'ok' ? 'OK' : (severityOf(r) === 'error' ? 'ERROR' : 'WARNING'),
     'Workbook': r.file, 'Branch': r.branch, 'Date': r.date, 'Shop Name': r.shopName,
-    'Category': r.category, 'Subcategory': r.subcategory, 'Amount': typeof r.amount === 'number' ? r.amount : r.amount,
+    'Category': r.category, 'Subcategory': r.subcategory,
+    'Amount': typeof r.amount === 'number' ? r.amount : r.amount,
     'Description': r.description
   })));
-  dataSheet['!cols'] = [{wch:22},{wch:16},{wch:12},{wch:18},{wch:18},{wch:16},{wch:12},{wch:36}];
+  dataSheet['!cols'] = [{wch:10},{wch:22},{wch:16},{wch:12},{wch:18},{wch:18},{wch:16},{wch:12},{wch:36}];
 
   const byBranch = {};
   combinedRecords.forEach(r => {
@@ -555,9 +768,17 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
   const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
   summarySheet['!cols'] = [{wch:24},{wch:16}];
 
+  const issueRows = [['Severity','Workbook','Branch','Source Row','Issue']];
+  combinedRecords.forEach(r => r.issues.forEach(issue => {
+    issueRows.push([issue.severity === 'error' ? 'ERROR' : 'WARNING', r.file, r.branch, r.sourceRow, issue.msg]);
+  }));
+  const issuesSheet = XLSX.utils.aoa_to_sheet(issueRows);
+  issuesSheet['!cols'] = [{wch:10},{wch:22},{wch:16},{wch:12},{wch:40}];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, dataSheet, 'Combined');
   XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary by Branch');
+  XLSX.utils.book_append_sheet(wb, issuesSheet, 'Issues');
   XLSX.writeFile(wb, 'Combined_Expenses.xlsx');
 });
 </script>
